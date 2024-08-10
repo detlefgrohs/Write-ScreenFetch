@@ -11,25 +11,26 @@ class WriteScreenFetch {
     Emit() {
         # ToDo: Should be passing the OS to 
         $os = $this.GetOS
-        $asciiart = Get-AsciiArt
+        $asciiart = Get-AsciiArt $OS
        
         $this.FillSystemInfo()
 
         # ToDo: Center the AsciiArt vertically if the system info is longer
         # ToDo: Center the systeminfo if the AsciiArt is longer
         # Write out all the lines of the AsciiArt with SystemInfo if Present
-        for($index = 0; $index -lt $asciiart.Length; $index += 1) {
+        for ($index = 0; $index -lt $asciiart.Length; $index += 1) {
             $this.WriteColoredString($asciiart[$index], $false)
             if ($index -lt $this.systeminfo.Length) {
                 $this.WriteColoredString($this.systeminfo[$index], $true);
-            } else {
+            }
+            else {
                 Write-Host
             }
         }
 
         # Handle the case where there are more SystemInfo lines...
         if ($this.systeminfo.Length -gt $asciiart.Length) {
-            for($index = $asciiart.Length; $index -lt $this.systeminfo.Length; $index += 1) {
+            for ($index = $asciiart.Length; $index -lt $this.systeminfo.Length; $index += 1) {
                 # ToDo: This should be based on the with of the AsciiArt...
                 Write-Host -NoNewline "                                        ";
                 $this.WriteColoredString($this.systeminfo[$index], $true);
@@ -55,23 +56,30 @@ class WriteScreenFetch {
     }
 
     # Don't like this but it works for now. Will look for something more robust...
+    # Write-Host "$([char]27)[46mTest"
+    # Ansi Coloring Sequences
+    # Write-Host "$([char]27)[48;5;9mTest"
+    # https://en.wikipedia.org/wiki/ANSI_escape_code
     [void] WriteColoredString([string] $coloredstring, [bool] $newLine = $false) {
         $toEmit, $color, $incolor = '', 'white', $false;
         
-        for($index = 0; $index -lt $coloredstring.Length; $index += 1) {
+        for ($index = 0; $index -lt $coloredstring.Length; $index += 1) {
             $char = $coloredstring[$index]
         
             if (($incolor -eq $false)) { 
                 if ($char -eq '{') {
                     Write-Host -NoNewline -ForegroundColor $color $toEmit
                     $color, $toEmit, $incolor = '', '', $true;
-                } else {
+                }
+                else {
                     $toEmit += $char
                 }
-            } else {
+            }
+            else {
                 if ($char -eq '}') {
                     $incolor = $false;
-                } else {
+                }
+                else {
                     $color += $char
                 }
             }
@@ -120,8 +128,8 @@ class WriteScreenFetch {
         $monitors = Get-WmiObject -N "root\wmi" -Class WmiMonitorListedSupportedSourceModes
 
         $displayNumber = 1;
-        foreach($monitor in $monitors) 
-        {   # ToDo: This is not getting the maximum resolution...
+        foreach ($monitor in $monitors) {
+            # ToDo: This is not getting the maximum resolution...
             # ToDo: Need to test on my BeastBot which has 4 monitors when I am not travelling...
             $message = "$($monitor.MonitorSourceModes[0].HorizontalActivePixels) x $($monitor.MonitorSourceModes[0].VerticalActivePixels)";
 
@@ -166,14 +174,12 @@ class WriteScreenFetch {
     [void] AddStorage() {
         $NumDisks = (Get-WmiObject Win32_LogicalDisk).Count;
 
-        for ($i=0; $i -lt ($NumDisks); $i++) 
-        {
+        for ($i = 0; $i -lt ($NumDisks); $i++) {
             $DiskID = (Get-WmiObject Win32_LogicalDisk)[$i].DeviceId;
 
             $DiskSize = (Get-WmiObject Win32_LogicalDisk)[$i].Size;
 
-            if ($DiskSize -and $DiskSize -ne 0)
-            {
+            if ($DiskSize -and $DiskSize -ne 0) {
                 $FreeDiskSize = (Get-WmiObject Win32_LogicalDisk)[$i].FreeSpace
                 $FreeDiskSizeGB = $FreeDiskSize / 1073741824;
                 $FreeDiskSizeGB = "{0:N0}" -f $FreeDiskSizeGB;
@@ -197,10 +203,10 @@ class WriteScreenFetch {
             }
 
             $FormattedDisk = "{red}Disk " + $DiskID.ToString() + " {green}" + 
-                $UsedDiskSizeGB.ToString() + "GB" + " / " + $DiskSizeGB.ToString() + "GB " + 
-                "(" + $UsedDiskPercent.ToString() + "%" + ")";
-                $this.systeminfo += $FormattedDisk;
-                $this.systeminfo += "        " + $this.CreateBar(($UsedDiskSizeGB / $DiskSizeGB), 40);
+            $UsedDiskSizeGB.ToString() + "GB" + " / " + $DiskSizeGB.ToString() + "GB " + 
+            "(" + $UsedDiskPercent.ToString() + "%" + ")";
+            $this.systeminfo += $FormattedDisk;
+            $this.systeminfo += "        " + $this.CreateBar(($UsedDiskSizeGB / $DiskSizeGB), 40);
         }
     }
 }
